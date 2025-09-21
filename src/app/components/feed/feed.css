@@ -1,0 +1,64 @@
+.feed-container {
+  max-width: 700px;
+  margin: 20px auto;
+  font-family: Arial, sans-serif;
+}
+
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.interactions {
+  margin: 10px 0;
+  color: #555;
+}
+
+.comments {
+  margin-top: 10px;
+  padding-left: 10px;
+  border-left: 2px solid #eee;
+}
+
+.comment {
+  margin-bottom: 5px;
+}
+
+.add-comment {
+  display: flex;
+  margin-top: 10px;
+}
+
+.add-comment input {
+  flex: 1;
+  padding: 5px;
+}
+
+.add-comment button {
+  margin-left: 5px;
+  padding: 6px 12px;
+}
+
+.create-post {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  background: #f9f9f9;
+}
+
+.create-post input,
+.create-post textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px;
+}
+
+.create-post button {
+  padding: 6px 12px;
+}

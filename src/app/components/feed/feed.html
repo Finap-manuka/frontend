@@ -1,0 +1,55 @@
+<!-- Create Post -->
+<div class="create-post">
+  <h3>Create a new post</h3>
+  <input [(ngModel)]="newPost.title" placeholder="Post title" />
+  <textarea [(ngModel)]="newPost.content" placeholder="Post content"></textarea>
+  <button (click)="createPost()">Post</button>
+</div>
+
+<hr />
+
+<!-- Feed -->
+<div class="feed-container" *ngIf="!loading; else loadingTpl">
+  <div *ngFor="let post of posts" class="post-card">
+    
+    <!-- Edit mode -->
+    <div *ngIf="editingPost[post.postId]; else viewMode">
+      <input [(ngModel)]="post.title" />
+      <textarea [(ngModel)]="post.content"></textarea>
+      <button (click)="updatePost(post)">Save</button>
+      <button (click)="editingPost[post.postId] = false">Cancel</button>
+    </div>
+
+    <!-- View mode -->
+    <ng-template #viewMode>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.content }}</p>
+      <small>By {{ post.author.name }} • {{ post.createdAt | date:'short' }}</small>
+      <button (click)="startEdit(post.postId)">✏️ Edit</button>
+
+      <div class="interactions">
+        <button (click)="like(post.postId)">👍</button> {{ post.likeCount }}
+        <button (click)="dislike(post.postId)">👎</button> {{ post.dislikeCount }}
+      </div>
+
+      <!-- Comments -->
+      <div class="comments">
+        <h4>Comments</h4>
+        <div *ngFor="let c of post.comments" class="comment">
+          <b>{{ c.author.name }}:</b> {{ c.content }}
+          <small>({{ c.createdAt | date:'short' }})</small>
+        </div>
+      </div>
+
+      <!-- Add comment -->
+      <div class="add-comment">
+        <input [(ngModel)]="newComments[post.postId]" placeholder="Write a comment..." />
+        <button (click)="addComment(post.postId)">Post</button>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <p>Loading feed...</p>
+</ng-template>
