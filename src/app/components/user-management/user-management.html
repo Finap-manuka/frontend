@@ -1,0 +1,275 @@
+<!-- User Management Section -->
+<div class="user-management">
+    <!-- Header Section -->
+    <div class="section-header">
+        <div class="header-content">
+            <h2>User Management</h2>
+            <p>Manage users, employees, and administrators</p>
+        </div>
+        <button class="add-user-btn" (click)="openAddUserModal()">
+            <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add New User
+        </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="messages" *ngIf="successMessage || errorMessage">
+        <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon users-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3>{{ userStats.totalUsers }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon employees-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3>{{ userStats.totalEmployees }}</h3>
+                <p>Employees</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon admins-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                    </path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3>{{ userStats.totalAdmins }}</h3>
+                <p>Administrators</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon recent-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12,6 12,12 16,14"></polyline>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h3>{{ userStats.recentUsers }}</h3>
+                <p>Recent (30 days)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="controls-section">
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearchChange()"
+                placeholder="Search users by name or email..." class="search-input" />
+        </div>
+
+        <div class="filter-controls">
+            <select [(ngModel)]="roleFilter" (change)="onFilterChange()" class="role-filter">
+                <option value="all">All Roles</option>
+                <option value="employee">Employees</option>
+                <option value="admin">Administrators</option>
+            </select>
+
+            <select [(ngModel)]="sortBy" (change)="onSortChange()" class="sort-select">
+                <option value="name">Sort by Name</option>
+                <option value="email">Sort by Email</option>
+                <option value="role">Sort by Role</option>
+                <option value="startDate">Sort by Start Date</option>
+            </select>
+
+            <button class="sort-order-btn" (click)="toggleSortOrder()">
+                <svg *ngIf="sortOrder === 'asc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m3 8 4-4 4 4"></path>
+                    <path d="M7 4v16"></path>
+                    <path d="m21 16-4 4-4-4"></path>
+                    <path d="M17 20V4"></path>
+                </svg>
+                <svg *ngIf="sortOrder === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="m3 16 4 4 4-4"></path>
+                    <path d="M7 20V4"></path>
+                    <path d="m21 8-4-4-4 4"></path>
+                    <path d="M17 4v16"></path>
+                </svg>
+            </button>
+
+            <button class="clear-filters-btn" (click)="clearFilters()" *ngIf="searchTerm || roleFilter !== 'all'">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-table-container" *ngIf="!loading; else loadingTemplate">
+        <table class="users-table" *ngIf="filteredUsers.length > 0; else noUsersTemplate">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Start Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let user of filteredUsers" class="user-row">
+                    <td class="user-cell">
+                        <div class="user-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">{{ user.name }}</span>
+                            <span class="user-id">ID: {{ user.userId }}</span>
+                        </div>
+                    </td>
+                    <td class="email-cell">{{ user.email }}</td>
+                    <td class="role-cell">
+                        <span class="role-badge" [class]="user.role.toLowerCase()">
+                            {{ formatRole(user.role) }}
+                        </span>
+                    </td>
+                    <td class="date-cell">{{ formatDate(user.startDate) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Users Found -->
+    <ng-template #noUsersTemplate>
+        <div class="no-users">
+            <svg class="no-users-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+            </svg>
+            <h3>No Users Found</h3>
+            <p>{{ searchTerm || roleFilter !== 'all' ? 'Try adjusting your filters' : 'No users have been added yet' }}
+            </p>
+        </div>
+    </ng-template>
+
+    <!-- Loading Template -->
+    <ng-template #loadingTemplate>
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading users...</p>
+        </div>
+    </ng-template>
+</div>
+
+<!-- Add User Side Panel -->
+<div class="side-panel-overlay" *ngIf="showAddUserModal" (click)="closeAddUserModal()">
+    <div class="side-panel" (click)="$event.stopPropagation()">
+        <div class="panel-header">
+            <h3>Add New User</h3>
+            <button class="panel-close" (click)="closeAddUserModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="panel-content">
+            <form class="add-user-form" (ngSubmit)="addUser()">
+                <div class="form-group">
+                    <label for="userName">Full Name</label>
+                    <input type="text" id="userName" [(ngModel)]="newUser.name" name="name"
+                        placeholder="Enter full name..." required />
+                </div>
+
+                <div class="form-group">
+                    <label for="userEmail">Email Address</label>
+                    <input type="email" id="userEmail" [(ngModel)]="newUser.email" name="email"
+                        placeholder="Enter email address..." required />
+                </div>
+
+                <div class="form-group">
+                    <label for="userPassword">Password</label>
+                    <input type="password" id="userPassword" [(ngModel)]="newUser.password" name="password"
+                        placeholder="Enter password..." required />
+                </div>
+
+                <div class="form-group">
+                    <label for="userRole">Role</label>
+                    <select id="userRole" [(ngModel)]="newUser.role" name="role" required>
+                        <option value="Employee">Employee</option>
+                        <option value="Admin">Administrator</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" [(ngModel)]="newUser.startDate" name="startDate" required />
+                </div>
+
+                <div class="panel-actions">
+                    <button type="button" class="cancel-btn" (click)="closeAddUserModal()">Cancel</button>
+                    <button type="submit" class="create-btn" [disabled]="loading">
+                        {{ loading ? 'Creating...' : 'Create User' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- In admin.html, add this at the very end, outside the main admin-layout div -->
+<div class="add-user-overlay" *ngIf="showAddUserModal" (click)="closeAddUserModal()">
+    <div class="add-user-panel" (click)="$event.stopPropagation()">
+        <div class="panel-header">
+            <h3>Add New User</h3>
+            <button (click)="closeAddUserModal()">×</button>
+        </div>
+        <div class="messages" *ngIf="successMessage || errorMessage">
+            <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+            <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+        </div>
+        <div class="panel-body">
+            <!-- Your form here -->
+            <input [(ngModel)]="newUser.name" placeholder="Name">
+            <input [(ngModel)]="newUser.email" placeholder="Email">
+            <input [(ngModel)]="newUser.password" placeholder="Password" type="password">
+            <select [(ngModel)]="newUser.role">
+                <option value="Employee">Employee</option>
+                <option value="Admin">Admin</option>
+            </select>
+            <input [(ngModel)]="newUser.startDate" type="date">
+            <div class="actions">
+                <button (click)="closeAddUserModal()">Cancel</button>
+                <button (click)="addUser()">Create</button>
+            </div>
+        </div>
+    </div>
+</div>

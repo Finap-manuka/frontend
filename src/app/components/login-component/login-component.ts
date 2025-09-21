@@ -49,12 +49,18 @@ export class LoginComponent {
           this.loginService.storeUserData(res.userId, res.name);
           console.log('📝 User data stored:', {
             userId: res.userId,
-            name: res.name
+            name: res.name,
+            role: res.role
           });
         }
 
-        // ✅ Navigate to Feed component
-        this.router.navigate(['/feed']);
+        if (res.role == 'Admin') {
+          this.router.navigate(["/admin"]);
+        } else if (res.role == "Employee") {
+          this.router.navigate(['/feed']);
+        }
+        
+
       },
       error: (err) => {
         console.error('❌ Login failed:', err);
