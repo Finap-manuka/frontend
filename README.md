@@ -70,16 +70,6 @@ ng generate module <name>       # Create module
 - Development: `http://localhost:4200`
 - Production build: `dist/` folder
 
-## Project Structure
-```
-src/
-├── app/
-│   ├── components/          # UI Components
-│   ├── services/           # API Services
-│   └── app.module.ts       # Main module
-├── environments/           # Environment configs
-└── assets/                # Static assets
-```
 
 ## API Integration
 Backend should be running on `https://localhost:5001` before starting frontend.
