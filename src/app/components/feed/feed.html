@@ -1,55 +1,293 @@
-<!-- Create Post -->
-<div class="create-post">
-  <h3>Create a new post</h3>
-  <input [(ngModel)]="newPost.title" placeholder="Post title" />
-  <textarea [(ngModel)]="newPost.content" placeholder="Post content"></textarea>
-  <button (click)="createPost()">Post</button>
+<!-- User Profile Header -->
+<div class="user-profile-header">
+  <div class="user-info">
+    <div class="user-avatar">
+      <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    </div>
+    <div class="user-details">
+      <h2 class="user-name">{{ currentUser?.name || 'User' }}</h2>
+      <span class="user-status">Welcome to your Social Feed</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="add-new-btn" (click)="toggleCreateForm()">
+      Add New Post
+    </button>
+    <button class="logout-btn" (click)="logout()">  
+      Logout
+    </button>
+  </div>
 </div>
 
-<hr />
+<!-- Success/Error Messages -->
+<div class="messages" *ngIf="successMessage || errorMessage">
+  <div class="success-message" *ngIf="successMessage">
+    <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20,6 9,17 4,12"></polyline>
+    </svg>
+    {{ successMessage }}
+  </div>
+  <div class="error-message" *ngIf="errorMessage">
+    <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+    {{ errorMessage }}
+  </div>
+</div>
 
-<!-- Feed -->
-<div class="feed-container" *ngIf="!loading; else loadingTpl">
-  <div *ngFor="let post of posts" class="post-card">
-    
-    <!-- Edit mode -->
-    <div *ngIf="editingPost[post.postId]; else viewMode">
-      <input [(ngModel)]="post.title" />
-      <textarea [(ngModel)]="post.content"></textarea>
-      <button (click)="updatePost(post)">Save</button>
-      <button (click)="editingPost[post.postId] = false">Cancel</button>
+<!-- Create Post Form (Initially Hidden) -->
+<div class="create-post-container" *ngIf="showCreateForm">
+  <div class="create-post">
+    <div class="form-header">
+      <div class="form-title">
+        <svg class="create-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+        </svg>
+        <h3>Create a new post</h3>
+      </div>
+      <button class="close-btn" (click)="toggleCreateForm()">
+        <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
+    <input [(ngModel)]="newPost.title" placeholder="Enter post title..." class="title-input" />
+    <textarea [(ngModel)]="newPost.content" placeholder="What's on your mind?" class="content-textarea"></textarea>
+    <div class="form-actions">
+      <button class="cancel-btn" (click)="cancelPost()">Cancel</button>
+      <button class="post-btn" (click)="createPost()">Post</button>
+    </div>
+  </div>
+</div>
 
-    <!-- View mode -->
-    <ng-template #viewMode>
-      <h3>{{ post.title }}</h3>
-      <p>{{ post.content }}</p>
-      <small>By {{ post.author.name }} • {{ post.createdAt | date:'short' }}</small>
-      <button (click)="startEdit(post.postId)">✏️ Edit</button>
+<!-- Posts Section Header with Filters -->
+<div class="posts-section-header">
+  <div class="section-title-group">
+    <h3 class="section-title">Recent Posts</h3>
+    <div class="posts-count" *ngIf="filteredPosts.length > 0">{{ filteredPosts.length }} {{ filteredPosts.length === 1 ? 'post' : 'posts' }}</div>
+  </div>
+  
+  <!-- Filter and Sort Controls -->
+  <div class="filter-controls">
+    <div class="filter-group">
+      <label for="authorFilter" class="filter-label">Filter by Author:</label>
+      <input 
+        id="authorFilter"
+        [(ngModel)]="authorFilter" 
+        (input)="onFilterChange()"
+        placeholder="Search by author name..." 
+        class="author-filter-input"
+      />
+    </div>
+    
+    <div class="sort-group">
+      <label for="sortBy" class="filter-label">Sort by:</label>
+      <select 
+        id="sortBy"
+        [(ngModel)]="sortBy" 
+        (change)="onSortChange()"
+        class="sort-select"
+      >
+        <option value="most-liked">Most Liked</option>
+        <option value="newest">Newest First</option>
+      </select>
+    </div>
+    
+    <button class="clear-filters-btn" (click)="clearFilters()" *ngIf="authorFilter">
+      <svg class="clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      Clear Filters
+    </button>
+  </div>
+</div>
 
-      <div class="interactions">
-        <button (click)="like(post.postId)">👍</button> {{ post.likeCount }}
-        <button (click)="dislike(post.postId)">👎</button> {{ post.dislikeCount }}
+<!-- Feed List View -->
+<div class="feed-container" *ngIf="!loading; else loadingTpl">
+  <div class="posts-list">
+    <div *ngFor="let post of filteredPosts" class="post-item" [class.trending-post]="isTrendingPost(post)">
+      
+      <!-- Trending Badge -->
+      <div class="trending-badge" *ngIf="isTrendingPost(post)">
+        <svg class="trending-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"></polyline>
+        </svg>
+        Trending
       </div>
-
-      <!-- Comments -->
-      <div class="comments">
-        <h4>Comments</h4>
-        <div *ngFor="let c of post.comments" class="comment">
-          <b>{{ c.author.name }}:</b> {{ c.content }}
-          <small>({{ c.createdAt | date:'short' }})</small>
+      
+      <!-- Edit mode -->
+      <div *ngIf="editingPost[post.postId]; else viewMode" class="edit-mode">
+        <div class="edit-header">
+          <div class="edit-title-section">
+            <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
+            <h4>Edit Post</h4>
+          </div>
+          <div class="edit-actions">
+            <button class="save-btn" (click)="updatePost(post)">
+              <svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                <polyline points="7,3 7,8 15,8"></polyline>
+              </svg>
+              Save
+            </button>
+            <button class="cancel-edit-btn" (click)="cancelEdit(post.postId)">Cancel</button>
+          </div>
         </div>
+        <input [(ngModel)]="post.title" class="edit-title" placeholder="Post title..." />
+        <textarea [(ngModel)]="post.content" class="edit-content" placeholder="Post content..."></textarea>
       </div>
 
-      <!-- Add comment -->
-      <div class="add-comment">
-        <input [(ngModel)]="newComments[post.postId]" placeholder="Write a comment..." />
-        <button (click)="addComment(post.postId)">Post</button>
-      </div>
-    </ng-template>
+      <!-- View mode -->
+      <ng-template #viewMode>
+        <div class="post-header">
+          <div class="post-meta">
+            <h3 class="post-title">{{ post.title }}</h3>
+            <div class="author-info">
+              <div class="author-avatar">
+                <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <div class="author-details">
+                <span class="author-name">{{ post.author?.name || 'Anonymous' }}</span>
+                <span class="post-date">{{ post.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="post-actions" *ngIf="canEditPost(post)">
+            <button class="edit-post-btn" (click)="startEdit(post.postId)">
+              <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+              </svg>
+              Edit
+            </button>
+            <button class="delete-post-btn" (click)="deletePost(post.postId)">
+              <svg class="delete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <div class="post-content">
+          <p>{{ post.content }}</p>
+        </div>
+
+        <div class="post-interactions">
+          <div class="reaction-buttons">
+            <button class="reaction-btn like-btn" (click)="like(post.postId)">
+              <svg class="thumbs-up-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 10v12"></path>
+                <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"></path>
+              </svg>
+              <span class="reaction-count">{{ post.likeCount || 0 }}</span>
+            </button>
+            <button class="reaction-btn dislike-btn" (click)="dislike(post.postId)">
+              <svg class="thumbs-down-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 14V2"></path>
+                <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"></path>
+              </svg>
+              <span class="reaction-count">{{ post.dislikeCount || 0 }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section" *ngIf="post.comments && post.comments.length > 0">
+          <h4 class="comments-title">
+            <svg class="comments-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Comments ({{ post.comments.length }})
+          </h4>
+          <div class="comments-list">
+            <div *ngFor="let c of post.comments" class="comment-item">
+              <div class="comment-header">
+                <div class="comment-author-info">
+                  <div class="comment-avatar">
+                    <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div class="comment-meta">
+                    <span class="comment-author">{{ c.author?.name || 'Anonymous' }}</span>
+                    <span class="comment-date">{{ c.createdAt | date:'short' }}</span>
+                  </div>
+                </div>
+                <div class="comment-actions" *ngIf="canEditComment(c)">
+                  <button class="edit-comment-btn" (click)="editComment(c)">
+                    <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
+                  </button>
+                  <button class="delete-comment-btn" (click)="deleteComment(c.commentId)">
+                    <svg class="delete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3,6 5,6 21,6"></polyline>
+                      <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <p class="comment-content">{{ c.content }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Comment -->
+        <div class="add-comment-section">
+          <div class="current-user-avatar">
+            <svg class="user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <input 
+            [(ngModel)]="newComments[post.postId]" 
+            placeholder="Write a comment..." 
+            class="comment-input"
+          />
+          <button class="comment-btn" (click)="addComment(post.postId)">
+            <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m22,2l-7,20l-4,-9l-9,-4l20,-7z"></path>
+            </svg>
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="filteredPosts.length === 0 && !loading">
+    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14,2 14,8 20,8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+      <polyline points="10,9 9,9 8,9"></polyline>
+    </svg>
+    <h3>{{ authorFilter ? 'No posts found' : 'No posts yet' }}</h3>
+    <p>{{ authorFilter ? 'Try adjusting your filter or clear it to see all posts.' : 'Be the first to share something with the community!' }}</p>
+    <button class="create-first-post-btn" (click)="toggleCreateForm()" *ngIf="!authorFilter">Create Your First Post</button>
+    <button class="clear-filters-btn" (click)="clearFilters()" *ngIf="authorFilter">Clear Filters</button>
   </div>
 </div>
 
 <ng-template #loadingTpl>
-  <p>Loading feed...</p>
+  <div class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading your feed...</p>
+  </div>
 </ng-template>

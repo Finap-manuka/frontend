@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login-component',
-  standalone: true, 
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login-component.html',
   styleUrls: ['./login-component.css'] // ✅ plural
@@ -43,7 +43,16 @@ export class LoginComponent {
       next: (res) => {
         console.log('✅ Login successful:', res);
         this.successMessage = 'Login successful!';
-        
+
+        // ✅ Store user data from response
+        if (res.userId && res.name) {
+          this.loginService.storeUserData(res.userId, res.name);
+          console.log('📝 User data stored:', {
+            userId: res.userId,
+            name: res.name
+          });
+        }
+
         // ✅ Navigate to Feed component
         this.router.navigate(['/feed']);
       },

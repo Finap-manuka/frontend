@@ -56,4 +56,50 @@ export class FeedService {
   dislikePost(postId: number, userId: number): Observable<any> {
     return this.http.post(`${this.baseUrl}api/interactions/${postId}?userId=${userId}`, { isLike: false });
   }
+
+  storeUserData(userId: number, name: string): void {
+    localStorage.setItem('userId', userId.toString());
+    localStorage.setItem('userName', name);
+    localStorage.setItem('isLoggedIn', 'true');
+    console.log('✅ User data stored:', { userId, name });
+  }
+
+  getUserId(): number | null {
+    const userId = localStorage.getItem('userId');
+    return userId ? parseInt(userId, 10) : null;
+  }
+
+  getUserName(): string | null {
+    return localStorage.getItem('userName');
+  }
+
+  getCurrentUser(): { userId: number; name: string } | null {
+    const userId = this.getUserId();
+    const userName = this.getUserName();
+    
+    if (userId && userName) {
+      return { userId, name: userName };
+    }
+    return null;
+  }
+
+  isLoggedIn(): boolean {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  }
+
+  logout(): void {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('isLoggedIn');
+    console.log('🚪 User logged out, localStorage cleared');
+  }
+
+  hasStoredUserData(): boolean {
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName');
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    
+    return !!(userId && userName && isLoggedIn === 'true');
+  }
+  
 }
